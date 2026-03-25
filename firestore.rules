@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == "abdallahahmedpilot2426@gmail.com" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+    
+    function isAccountant() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'accountant'
+      );
+    }
+
+    function isGuest() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function isStaff() {
+      return isAdmin() || isAccountant();
+    }
+
+    function canReadStaff() {
+      return isStaff() || isGuest();
+    }
+
+    function isClientOwner(clientId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == clientId
+      );
+    }
+
+    function isClientFile() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == resource.data.clientId
+      );
+    }
+    
+    // ===============================================================
+    // Collections
+    // ===============================================================
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if canReadStaff() || request.auth.uid == userId;
+      allow create: if isAdmin() || (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'client');
+      allow update: if isAdmin() || request.auth.uid == userId;
+      allow delete: if isAdmin() && request.auth.uid != userId;
+    }
+
+    // Clients Collection
+    match /clients/{clientId} {
+      allow read: if canReadStaff() || isClientOwner(clientId) || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      allow create, update, delete: if isStaff();
+    }
+
+    // Files Collection
+    match /files/{fileId} {
+      allow read: if canReadStaff() || isClientFile();
+      allow create, update, delete: if isStaff();
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow read: if canReadStaff();
+      allow create, update, delete: if isStaff();
+    }
+
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read: if canReadStaff();
+      allow write: if isAdmin();
+    }
+
+    // Email Logs Collection
+    match /email_logs/{logId} {
+      allow read: if canReadStaff();
+      allow create: if isStaff();
+      allow update, delete: if false; // Logs are immutable
+    }
+  }
+}

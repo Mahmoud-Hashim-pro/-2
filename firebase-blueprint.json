@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user (accountant or admin)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "accountant"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Client information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "type": { "type": "string" },
+        "city": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type"]
+    },
+    "FileRecord": {
+      "title": "File Record",
+      "description": "Client file with expiry and renewal details",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientType": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "responsible": { "type": "string" },
+        "renewalCost": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "expired", "renewed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "clientName", "name", "type", "expiryDate"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Client project",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "clientId", "clientName", "status"]
+    },
+    "EmailLog": {
+      "title": "Email Log",
+      "description": "Log of sent email alerts",
+      "type": "object",
+      "properties": {
+        "fileId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["auto", "manual"] }
+      },
+      "required": ["fileId", "clientId", "sentAt", "type"]
+    },
+    "SystemSettings": {
+      "title": "System Settings",
+      "description": "Global configuration for dropdowns",
+      "type": "object",
+      "properties": {
+        "cities": { "type": "array", "items": { "type": "string" } },
+        "companyTypes": { "type": "array", "items": { "type": "string" } },
+        "fileTypes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "System users"
+    },
+    "clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Clients"
+    },
+    "files/{fileId}": {
+      "schema": { "$ref": "#/entities/FileRecord" },
+      "description": "Files"
+    },
+    "projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Projects"
+    },
+    "email_logs/{logId}": {
+      "schema": { "$ref": "#/entities/EmailLog" },
+      "description": "Email sending logs"
+    },
+    "settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SystemSettings" },
+      "description": "Global settings (singleton document 'global')"
+    }
+  }
+}
